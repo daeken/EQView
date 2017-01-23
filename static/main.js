@@ -18,9 +18,21 @@ function getS3D(fn, cb) {
 }
 
 function viewFile(s3d, fn) {
-	var ext = fn.split('.').pop();
-	if(fn == '$')
-		console.log(s3d, fn);
+	var ext = fn.split('.').pop().toLowerCase();
+	if(fn == '$') {
+		// XXX: Do lookup of the main file and call view function accordingly.
+	}
+
+	$('#viewer').empty();
+
+	switch(ext) {
+		default:
+			showHex(s3d.files[fn]);
+			break;
+	}
+
+	$('#subfileselector,#tlfileselector').hide();
+	$('#viewer').show();
 }
 
 function selectSubFile(fn, pushed) {
@@ -42,7 +54,7 @@ function selectRootFile(fn, pushed, sub) {
 			$('#subfileselector').show();
 		showFiles('#subfiles', s3d.filenames, selectSubFile);
 		if(sub !== undefined)
-			selectSubFile(s3d, sub, true);
+			selectSubFile(sub, true);
 	});
 }
 
