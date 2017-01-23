@@ -1,4 +1,4 @@
-var eqfiles;
+var eqfiles, curs3d;
 
 function getRootFile(fn, cb) {
 	var xhr = new XMLHttpRequest();
@@ -17,9 +17,17 @@ function getS3D(fn, cb) {
 	});
 }
 
-function selectSubFile(s3d, fn, pushed) {
+function viewFile(s3d, fn) {
+	var ext = fn.split('.').pop();
+	if(fn == '$')
+		console.log(s3d, fn);
+}
+
+function selectSubFile(fn, pushed) {
 	if(pushed !== true)
-		history.pushState({type: 'sub', fn: fn}, fn, '#' + s3d.fn + '/' + fn);
+		history.pushState({type: 'sub', fn: fn}, fn, '#' + curs3d.fn + '/' + fn);
+
+	viewFile(curs3d, fn);
 }
 
 function selectRootFile(fn, pushed, sub) {
@@ -28,10 +36,11 @@ function selectRootFile(fn, pushed, sub) {
 	$('#tlfileselector').hide();
 
 	getS3D(fn, function(s3d) {
+		curs3d = s3d;
 		s3d.fn = fn;
 		if(sub === undefined)
 			$('#subfileselector').show();
-		showFiles('#subfiles', s3d.filenames, function(fn) { selectSubFile(s3d, fn) });
+		showFiles('#subfiles', s3d.filenames, selectSubFile);
 		if(sub !== undefined)
 			selectSubFile(s3d, sub, true);
 	});
@@ -75,6 +84,10 @@ function showFiles(sel, files, cb) {
 }
 
 $(document).ready(function() {
+	$('#viewsubfile').click(function() {
+		selectSubFile('$');
+	});
+
 	$.ajax('/eqfiles.json', { dataType: 'json', success : function(files) {
 		eqfiles = files;
 		showFiles('#tlfiles', files, selectRootFile);

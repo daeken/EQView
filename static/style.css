@@ -9,3 +9,13 @@
 .filelist a:hover {
 	cursor: pointer;
 }
+
+#viewsubfile {
+	border-bottom: 2px dashed black;
+	text-decoration: none;
+	font-size: 150%;
+}
+
+#viewsubfile:hover {
+	border-bottom: 2px dotted black;
+}
