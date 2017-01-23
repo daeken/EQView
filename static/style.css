@@ -2,10 +2,10 @@
 	display: none;
 }
 
-.filelist li {
+.filelist a {
 	text-decoration: underline;
 }
 
-.filelist li:hover {
+.filelist a:hover {
 	cursor: pointer;
 }

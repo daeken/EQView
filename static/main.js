@@ -28,11 +28,11 @@ function selectRootFile(fn, pushed) {
 
 	getS3D(fn, function(s3d) {
 		$('#subfileselector').show();
-		showFiles('#subfiles', s3d.files, function(fn) { selectSubFile(s3d, fn) });
+		showFiles('#subfiles', s3d.filenames, function(fn) { selectSubFile(s3d, fn) });
 	});
 }
 
-var specialExt = ['s3d', 'eqg', 'wld', 'ani', 'ter'];
+var specialExt = ['s3d', 'eqg', 'wld', 'ani', 'lit', 'mod', 'zon', 'ter'];
 function cmp(a, b) {
 	if(a == b)
 		return 0;
@@ -61,9 +61,11 @@ function showFiles(sel, files, cb) {
 	sortFiles(files);
 	$(sel).empty();
 	for(var fn of files) {
-		$(sel).append($('<li>').text(fn).click(
+		var li = $('<li>');
+		li.append($('<a>').text(fn).click(
 			(function(fn) { return function() { cb(fn) } })(fn)
 		));
+		$(sel).append(li);
 	}
 }
 
