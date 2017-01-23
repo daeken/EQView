@@ -17,18 +17,23 @@ function getS3D(fn, cb) {
 	});
 }
 
-function selectSubFile(s3d, fn) {
-
+function selectSubFile(s3d, fn, pushed) {
+	if(pushed !== true)
+		history.pushState({type: 'sub', fn: fn}, fn, '#' + s3d.fn + '/' + fn);
 }
 
-function selectRootFile(fn, pushed) {
+function selectRootFile(fn, pushed, sub) {
 	if(pushed !== true)
 		history.pushState({type: 'tl', fn: fn}, fn, '#' + fn);
 	$('#tlfileselector').hide();
 
 	getS3D(fn, function(s3d) {
-		$('#subfileselector').show();
+		s3d.fn = fn;
+		if(sub === undefined)
+			$('#subfileselector').show();
 		showFiles('#subfiles', s3d.filenames, function(fn) { selectSubFile(s3d, fn) });
+		if(sub !== undefined)
+			selectSubFile(s3d, sub, true);
 	});
 }
 
@@ -73,6 +78,11 @@ $(document).ready(function() {
 	$.ajax('/eqfiles.json', { dataType: 'json', success : function(files) {
 		eqfiles = files;
 		showFiles('#tlfiles', files, selectRootFile);
+
+		if(window.location.hash.length > 1) {
+			var hash = window.location.hash.substring(1).split('/');
+			selectRootFile(hash[0], true, hash[1]);
+		}
 	} });
 });
 
