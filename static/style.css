@@ -1,0 +1,11 @@
+#subfileselector, #viewer {
+	display: none;
+}
+
+.filelist li {
+	text-decoration: underline;
+}
+
+.filelist li:hover {
+	cursor: pointer;
+}

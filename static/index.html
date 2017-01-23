@@ -2,9 +2,24 @@
 <html>
 	<head>
 		<title>EQView</title>
+		<link rel="stylesheet" type="text/css" href="style.css">
 		<script src="//code.jquery.com/jquery-2.2.4.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.min.js"></script>
+		<script src="s3d.js"></script>
+		<script src="main.js"></script>
 	</head>
 	<body>
+		<div id="tlfileselector" class="filelist">
+			<h1>Select a root file</h1>
+			<ul id="tlfiles">
+			</ul>
+		</div>
+		<div id="subfileselector" class="filelist">
+			<h1>Select a subfile from <span id="tlfilename"></span></h1>
+			<ul id="subfiles">
+			</ul>
+		</div>
+		<div id="viewer">
+		</div>
 	</body>
 </html>
