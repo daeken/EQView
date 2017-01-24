@@ -1,0 +1,59 @@
+---
+
+EQG:
+  structs:
+    Mod:
+      - string[4]: Magic # 'EQGM'
+      - assert@if<magic != "EQGM">: magicGuard
+      - uint32: Version
+      - uint32: strlen, numMat, numVert, numTri, numBones
+      - string[strlen]: StringTable
+      - Material[numMat]: Materials
+      - Vertex[numVert]@if<Version < 3>: Vertices
+      - Vertex3[numVert]@if<Version >= 3>: Vertices3
+      - Triangle[numTri]: Triangles
+      - Bone[numBones]: Bones
+      - BoneAssignment[numVert]@if<numBones > 0>: BoneAssignments
+
+    Material:
+      - uint32: Index
+      - uint32: NameOff, ShaderOff # String indices
+      - uint32: numProp
+      - MatProperty[numProp]: Properties
+
+    MatProperty:
+      - uint32: NameOff # String index
+      - uint32: Type
+      - assert@if<Type == 1 || Type > 3>: typeGuard
+      - float@if<Type == 0>: FloatValue
+      - uint32@if<Type == 2>: StringValue # String index
+      - uint32@if<Type == 3>: ARGBValue
+
+    Vertex:
+      - float[3]: Position, Normal
+      - float[2]: TexCoord
+
+    Vertex3:
+      - float[3]: Position, Normal
+      - uint32: Unk1
+      - float[2]: TexCoord
+      - float[2]: Unk2
+
+    Triangle:
+      - uint32[3]: Indices
+      - uint32: MatIndex, Flag
+
+    Bone:
+      - uint32: NameOff # String index
+      - uint32: LinkBoneIndex, Flag, ChildBoneIndex
+      - float[3]: Position
+      - float[4]: Rotation # Quaternion
+      - float[3]: Scale
+
+    BoneAssignment:
+      - uint32: Count # Number of weights actually used
+      - BoneWeight[4]: Weights
+
+    BoneWeight:
+      - int32: BoneIndex
+      - float: Value
