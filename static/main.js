@@ -120,10 +120,5 @@ window.onpopstate = function(evt) {
 		$('#subfileselector').hide();
 		$('#viewer').hide();
 		selectRootFile(evt.state.fn, true);
-	} else if(evt.state.type == 'sub') {
-		$('#tlfileselector').hide();
-		$('#subfileselector').hide();
-		$('#viewer').hide();
-		selectSubFile(evt.state.fn, true);
 	}
 };
