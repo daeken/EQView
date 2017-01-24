@@ -4,6 +4,8 @@
  * version: 1.0.2
  * url: https://github.com/opusonline/binary.js
  * license: MIT
+ *
+ * Modifications by Cody Brocious
  */
 
 ;(function(global) {
@@ -59,54 +61,54 @@
 	Binary.prototype.getBuffer = function() {
 		return this.dataView.buffer;
 	};
-	Binary.prototype.getUint8 = function() {
+	Binary.prototype.u8 = Binary.prototype.getUint8 = function() {
 		var offset = this.position;
 		this.seek(offset + Uint8Array.BYTES_PER_ELEMENT);
 		var result = this.dataView.getUint8(offset);
 		return result;
 	};
-	Binary.prototype.getInt8 = function() {
+	Binary.prototype.i8 = Binary.prototype.getInt8 = function() {
 		var offset = this.position;
 		this.seek(offset + Int8Array.BYTES_PER_ELEMENT);
 		var result = this.dataView.getInt8(offset);
 		return result;
 	};
-	Binary.prototype.getUint16 = function(littleEndian) {
+	Binary.prototype.u16 = Binary.prototype.getUint16 = function(littleEndian) {
 		littleEndian = littleEndian || this.littleEndian;
 		var offset = this.position;
 		this.seek(offset + Uint16Array.BYTES_PER_ELEMENT);
 		var result = this.dataView.getUint16(offset, littleEndian);
 		return result;
 	};
-	Binary.prototype.getInt16 = function(littleEndian) {
+	Binary.prototype.i16 = Binary.prototype.getInt16 = function(littleEndian) {
 		littleEndian = littleEndian || this.littleEndian;
 		var offset = this.position;
 		this.seek(offset + Int16Array.BYTES_PER_ELEMENT);
 		var result = this.dataView.getInt16(offset, littleEndian);
 		return result;
 	};
-	Binary.prototype.getUint32 = function(littleEndian) {
+	Binary.prototype.u32 = Binary.prototype.getUint32 = function(littleEndian) {
 		littleEndian = littleEndian || this.littleEndian;
 		var offset = this.position;
 		this.seek(offset + Uint32Array.BYTES_PER_ELEMENT);
 		var result = this.dataView.getUint32(offset, littleEndian);
 		return result;
 	};
-	Binary.prototype.getInt32 = function(littleEndian) {
+	Binary.prototype.i32 = Binary.prototype.getInt32 = function(littleEndian) {
 		littleEndian = littleEndian || this.littleEndian;
 		var offset = this.position;
 		this.seek(offset + Int32Array.BYTES_PER_ELEMENT);
 		var result = this.dataView.getInt32(offset, littleEndian);
 		return result;
 	};
-	Binary.prototype.getFloat32 = function(littleEndian) {
+	Binary.prototype.f32 = Binary.prototype.getFloat32 = function(littleEndian) {
 		littleEndian = littleEndian || this.littleEndian;
 		var offset = this.position;
 		this.seek(offset + Float32Array.BYTES_PER_ELEMENT);
 		var result = this.dataView.getFloat32(offset, littleEndian);
 		return result;
 	};
-	Binary.prototype.getFloat64 = function(littleEndian) {
+	Binary.prototype.f64 = Binary.prototype.getFloat64 = function(littleEndian) {
 		littleEndian = littleEndian || this.littleEndian;
 		var offset = this.position;
 		this.seek(offset + Float64Array.BYTES_PER_ELEMENT);
