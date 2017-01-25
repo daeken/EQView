@@ -29,6 +29,9 @@ function viewFile(s3d, fn) {
 		case 'mod':
 			showMod(s3d.files[fn]);
 			break;
+		case 'ter':
+			showTer(s3d.files[fn]);
+			break;
 		default:
 			showHex(s3d.files[fn]);
 			break;

@@ -14,6 +14,16 @@ EQG:
       - Bone[numBones]: Bones
       - BoneAssignment[numVert]@if<numBones > 0>: BoneAssignments
 
+    Ter:
+      - string[4]@assert<$ == "EQGT">: magic
+      - uint32: Version
+      - uint32: strlen, numMat, numVert, numTri
+      - stringtable[strlen]: stringTable
+      - Material[numMat]: Materials
+      - Vertex[numVert]@if<Version < 3>: Vertices
+      - Vertex3[numVert]@if<Version >= 3>: Vertices
+      - Triangle[numTri]: Triangles
+
     Material:
       - uint32: Index
       - stringref<uint32>: Name, Shader

@@ -37,14 +37,14 @@ Eqg.Vertex3 = class {
 		for(var i = 0; i < 3; ++i) {
 			Normal[i] = br.f32();
 		}
-		var Unk1 = this.Unk1 = br.u32();
+		var unk1 = br.u32();
 		var TexCoord = this.TexCoord = new Array(2);
 		for(var i = 0; i < 2; ++i) {
 			TexCoord[i] = br.f32();
 		}
-		var Unk2 = this.Unk2 = new Array(2);
+		var unk2 = new Array(2);
 		for(var i = 0; i < 2; ++i) {
-			Unk2[i] = br.f32();
+			unk2[i] = br.f32();
 		}
 	}
 };
@@ -119,6 +119,40 @@ Eqg.BoneWeight = class {
 		var br = new Binary(data, true);
 		var BoneIndex = this.BoneIndex = br.i32();
 		var Value = this.Value = br.f32();
+	}
+};
+
+Eqg.Ter = class {
+	constructor(data) {
+		var br = new Binary(data, true);
+		var magic = br.getString(4);
+		if(!(magic == "EQGT")) throw new Error('Assertion failed: magic == "EQGT"');
+		var Version = this.Version = br.u32();
+		var strlen = br.u32();
+		var numMat = br.u32();
+		var numVert = br.u32();
+		var numTri = br.u32();
+		Eqg.__stringtable = br.getString(strlen);
+		var Materials = this.Materials = new Array(numMat);
+		for(var i = 0; i < numMat; ++i) {
+			Materials[i] = new Eqg.Material(br);
+		}
+		if(Version < 3) {
+			var Vertices = this.Vertices = new Array(numVert);
+			for(var j = 0; j < numVert; ++j) {
+				Vertices[j] = new Eqg.Vertex(br);
+			}
+		}
+		if(Version >= 3) {
+			var Vertices = this.Vertices = new Array(numVert);
+			for(var j = 0; j < numVert; ++j) {
+				Vertices[j] = new Eqg.Vertex3(br);
+			}
+		}
+		var Triangles = this.Triangles = new Array(numTri);
+		for(var i = 0; i < numTri; ++i) {
+			Triangles[i] = new Eqg.Triangle(br);
+		}
 	}
 };
 
