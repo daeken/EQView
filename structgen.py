@@ -2,24 +2,15 @@ import sys, yaml
 from pprint import pprint
 from math import *
 
-typemap = dict(
-	uint8='byte', 
-	uint16='ushort', 
-	uint32='uint', 
-	int8='sbyte', 
-	int16='short', 
-	int32='int'
-)
-
 btypemap = dict(
-	uint8='Byte', 
-	uint16='UInt16', 
-	uint32='UInt32', 
-	int8='SByte', 
-	int16='Int16', 
-	int32='Int32', 
-	float='Single', 
-	double='Double'
+	uint8='u8', 
+	uint16='u16', 
+	uint32='u32', 
+	int8='i8', 
+	int16='i16', 
+	int32='i32', 
+	float='f32', 
+	double='f64'
 )
 
 DEBUGSTRUCTS = ()
@@ -43,85 +34,31 @@ class Type(object):
 
 		self.base = spec.split('<', 1)[0].split('[', 1)[0]
 
-	def declare(self):
-		if self.base == 'skip':
-			return None
-		elif self.base == 'varstring':
-			type = 'string'
-		elif self.base == 'list':
-			assert self.gen is not None
-			type = 'List<%s>' % self.gen.declare()
-		else:
-			type = typemap[self.base] if self.base in typemap else self.base
-			if self.base != 'bool' and self.gen is not None: # Bools shouldn't be generic in C#
-				type += '<%s>' % self.gen.declare()
-
-		if self.base not in ('string', 'list') and self.rank is not None:
-			type += '[]'
-
-		return type
-
-	def pack(self, name, ws='', array=False):
-		if self.base == 'skip':
-			print '%sbw.Write(new byte[%s]);' % (ws, self.rank)
-			return
-
-		if not array and self.base != 'string' and self.rank is not None:
-			tvar = chr(ord('i') + len(ws) - 3)
-			print '%sfor(var %s = 0; %s < %s; ++%s) {' % (ws, tvar, tvar, self.rank, tvar)
-			self.pack('%s[%s]' % (name, tvar), ws=ws + '\t', array=True)
-			print '%s}' % ws
-			return
-
-		if self.base in btypemap:
-			print '%sbw.Write(%s);' % (ws, name)
-		elif self.base == 'bool':
-			print '%sbw.Write((%s) (%s ? 1 : 0));' % (ws, typemap[self.gen.base], name)
-		elif self.base == 'string' or self.base == 'varstring':
-			print '%sbw.Write(%s.ToBytes(%s));' % (ws, name, self.rank if self.base == 'string' else '')
-		elif self.base in allEnums:
-			print '%sbw.Write((%s) %s);' % (ws, allEnums[self.base].cast, name)
-		else:
-			print '%s%s.Pack(bw);' % (ws, name)
-
-	def unpack(self, name, ws='', array=False):
+	def unpack(self, name, ns, ws='', array=False):
 		if self.base == 'skip':
 			print '%sbr.ReadBytes(%s);' % (ws, self.rank)
 			return
 
 		if not array and self.base != 'string' and self.rank is not None:
-			if self.base == 'list':
-				print '%s%s = new List<%s>();' % (ws, name, self.gen.declare())
-			else:
-				print '%s%s = new %s[%s];' % (ws, name, typemap[self.base] if self.base in typemap else self.base, self.rank)
-			tvar = chr(ord('i') + len(ws) - 3)
+			print '%svar %s = this.%s = new Array(%s);' % (ws, name, name, self.rank)
+			tvar = chr(ord('i') + len(ws) - 2)
 			print '%sfor(var %s = 0; %s < %s; ++%s) {' % (ws, tvar, tvar, self.rank, tvar)
-			if self.base == 'list':
-				self.gen.unpack(name, ws=ws + '\t', array='list')
-			else:
-				self.unpack('%s[%s]' % (name, tvar), ws=ws + '\t', array=self.base)
+			self.unpack('%s[%s]' % (name, tvar), ns, ws=ws + '\t', array=self.base)
 			print '%s}' % ws
 			return
 
-		if array != 'list' and self.struct.name in DEBUGSTRUCTS:
-			print '%sSystem.Console.WriteLine($"Reading field `%s` from { br.BaseStream.Position }");' % (ws, name)
 		if self.base in btypemap:
-			val = 'br.Read%s()' % btypemap[self.base]
+			val = 'br.%s()' % btypemap[self.base]
 		elif self.base == 'bool':
-			val = 'br.Read%s() != 0' % btypemap[self.gen.base]
+			val = 'br.%s() != 0' % btypemap[self.gen.base]
 		elif self.base == 'string' or self.base == 'varstring':
-			val = 'br.ReadString(%s)' % ('-1' if self.base == 'varstring' else self.rank)
+			val = 'br.getString(%s)' % ('-1' if self.base == 'varstring' else self.rank)
 		elif self.base in allEnums:
 			val = '((%s) 0).Unpack(br)' % self.base
 		else:
-			val = 'new %s(br)' % self.base
+			val = 'new %s.%s(br)' % (ns, self.base)
 
-		if array == 'list':
-			print '%s%s.Add(%s);' % (ws, name, val)
-		else:
-			print '%s%s = %s;' % (ws, name, val)
-			if self.struct.name in DEBUGSTRUCTS:
-				print '%sSystem.Console.WriteLine($"Read `%s` { %s }");' % (ws, name, name)
+		print '%s%s%s = %s;' % (ws, 'var %s = this.' % name if array == False else '', name, val)
 
 class Struct(object):
 	def __init__(self, name, ydef):
@@ -129,14 +66,18 @@ class Struct(object):
 		self.elems = []
 		self.suppress = []
 		for elem in ydef:
+			_assert = None
+			cond = None
 			(type, names), = elem.items()
-			if '@' in type:
-				type, cond = type.split('@', 2)
-				assert cond.startswith('if<') and cond.endswith('>')
-				cond = cond[3:-1]
-			else:
-				cond = None
-			type = Type(self, type)
+			type = type.split('@')
+			for t in type[1:]:
+				if t.startswith('if<') and t.endswith('>'):
+					assert cond is None
+					cond = t[3:-1]
+				elif t.startswith('assert<') and t.endswith('>'):
+					assert _assert is None
+					_assert = t[7:-1]
+			type = Type(self, type[0])
 			for name in names.split(','):
 				name = name.strip()
 				if name.startswith('$'):
@@ -144,113 +85,37 @@ class Struct(object):
 					self.suppress.append(name)
 				self.elems.append((name, type, cond))
 
+				if _assert is not None:
+					self.elems.append((_assert.replace('$', name), 'assert', cond))
+
 	def __repr__(self):
 		return 'Struct(%r, %r)' % (self.name, self.elems)
 
-	def declare(self):
-		print '\tpublic struct %s : IEQStruct {' % self.name
-
+	def declare(self, ns):
+		print '%s.%s = class {' % (ns, self.name)
+		print '\tconstructor(data) {'
+		print '\t\tvar br = new Binary(data, true);'
 		for name, type, cond in self.elems:
-			stype = type.declare()
-			if stype is None:
-				continue
-			print '\t\t%s%s %s;' % ('public ' if name[0].isupper() else '', stype, name)
-
-		if len(list(1 for name, type, cond in self.elems if name[0].isupper())):
-			print
-			print '\t\tpublic %s(%s) : this() {' % (self.name, ', '.join('%s %s' % (type.declare(), name) for name, type, cond in self.elems if name[0].isupper()))
-			for name, type, cond in self.elems:
-				if name[0].isupper():
-					print '\t\t\tthis.%s = %s;' % (name, name)
-			print '\t\t}'
-
-		print
-		print '\t\tpublic %s(byte[] data, int offset = 0) : this() {' % self.name
-		print '\t\t\tUnpack(data, offset);'
-		print '\t\t}'
-		print '\t\tpublic %s(BinaryReader br) : this() {' % self.name
-		print '\t\t\tUnpack(br);'
-		print '\t\t}'
-
-		print '\t\tpublic void Unpack(byte[] data, int offset = 0) {'
-		print '\t\t\tusing(var ms = new MemoryStream(data, offset, data.Length - offset)) {'
-		print '\t\t\t\tusing(var br = new BinaryReader(ms)) {'
-		print '\t\t\t\t\tUnpack(br);'
-		print '\t\t\t\t}'
-		print '\t\t\t}'
-		print '\t\t}'
-
-		print '\t\tpublic void Unpack(BinaryReader br) {'
-		for name, type, cond in self.elems:
+			ws = '\t\t'
 			if cond is not None:
-				print '\t\t\tif(%s) {' % cond
-				type.unpack(name, '\t\t\t\t')
-				print '\t\t\t}'
+				print '\t\tif(%s) {' % cond
+				ws += '\t'
+
+			if type == 'assert':
+				print '%sif(!(%s)) throw new Error(%r);' % (ws, name, 'Assertion failed: ' + name)
 			else:
-				type.unpack(name, '\t\t\t')
-		print '\t\t}'
-
-		print
-		print '\t\tpublic byte[] Pack() {'
-		print '\t\t\tusing(var ms = new MemoryStream()) {'
-		print '\t\t\t\tusing(var bw = new BinaryWriter(ms)) {'
-		print '\t\t\t\t\tPack(bw);'
-		print '\t\t\t\t\treturn ms.ToArray();'
-		print '\t\t\t\t}'
-		print '\t\t\t}'
-		print '\t\t}'
-
-		print '\t\tpublic void Pack(BinaryWriter bw) {'
-		for name, type, cond in self.elems:
-			if cond is not None:
-				print '\t\t\tif(%s) {' % cond
-				type.pack(name, '\t\t\t\t')
-				print '\t\t\t}'
-			else:
-				type.pack(name, '\t\t\t')
-		print '\t\t}'
-
-		print
-		print '\t\tpublic override string ToString() {'
-		print '\t\t\tvar ret = "struct %s {\\n";' % self.name
-		for i, (name, type, cond) in enumerate(self.elems):
-			dec = type.declare()
-			if dec is None or not name[0].isupper() or name in self.suppress:
-				continue
+				type.unpack(name, ns, ws)
 
 			if cond is not None:
-				print '\t\t\tif(%s) {' % cond
-				ws = '\t\t\t\t'
-			else:
-				ws = '\t\t\t'
-
-			print ws + 'ret += "\\t%s = ";' % name
-			print ws + 'try {'
-			oldws = ws
-			ws += '\t'
-			if type.base != 'string' and type.rank is not None:
-				print ws + 'ret += "{\\n";'
-				print ws + 'for(int i = 0, e = %s.%s; i < e; ++i)' % (name, 'Count' if type.base == 'list' else 'Length')
-				print ws + '\tret += $"\\t\\t{ Indentify(%s[i], 2) }" + (i != e - 1 ? "," : "") + "\\n";' % name
-				print ws + 'ret += "\\t}%s\\n";' % (',' if i != len(self.elems) - 1 else '')
-			else:
-				print ws + 'ret += $"{ Indentify(%s) }%s\\n";' % (name, ',' if i != len(self.elems) - 1 else '')
-			ws = oldws
-			print ws + '} catch(NullReferenceException) {'
-			print ws + '\tret += "!!NULL!!\\n";'
-			print ws + '}'
-
-			if cond is not None:
-				print '\t\t\t}'
-
-		print '\t\t\treturn ret + "}";'
-		print '\t\t}'
-
+				print '\t\t}'
 		print '\t}'
+
+		print '};'
 
 
 class BitType(object):
 	def __init__(self, bf, spec):
+		assert False
 		self.bf = bf
 		assert '<' in spec
 		base, size = spec.split('<', 1)
@@ -324,6 +189,7 @@ class BitType(object):
 
 class Bitfield(object):
 	def __init__(self, name, ydef):
+		assert False
 		self.name = name
 		self.elems = []
 		self.suppress = []
@@ -429,50 +295,6 @@ class Bitfield(object):
 			cur_off += type.bits
 		print '\t\t}'
 
-		print
-		print '\t\tpublic byte[] Pack() {'
-		print '\t\t\tusing(var ms = new MemoryStream()) {'
-		print '\t\t\t\tusing(var bw = new BinaryWriter(ms)) {'
-		print '\t\t\t\t\tPack(bw);'
-		print '\t\t\t\t\treturn ms.ToArray();'
-		print '\t\t\t\t}'
-		print '\t\t\t}'
-		print '\t\t}'
-
-		print '\t\tpublic void Pack(BinaryWriter bw) {'
-		#for name, type in self.elems:
-		#	type.pack(name, '\t\t\t')
-		print '\t\t}'
-
-		print
-		print '\t\tpublic override string ToString() {'
-		print '\t\t\tvar ret = "bitfield %s {\\n";' % self.name
-		for i, (name, type) in enumerate(self.elems):
-			dec = type.declare()
-			if dec is None or not name[0].isupper() or name in self.suppress:
-				continue
-
-			ws = '\t\t\t'
-
-			print ws + 'ret += "\\t%s = ";' % name
-			print ws + 'try {'
-			oldws = ws
-			ws += '\t'
-			if type.base != 'string' and type.rank is not None:
-				print ws + 'ret += "{\\n";'
-				print ws + 'for(int i = 0, e = %s.%s; i < e; ++i)' % (name, 'Count' if type.base == 'list' else 'Length')
-				print ws + '\tret += $"\\t\\t{ Indentify(%s[i], 2) }" + (i != e - 1 ? "," : "") + "\\n";' % name
-				print ws + 'ret += "\\t}%s\\n";' % (',' if i != len(self.elems) - 1 else '')
-			else:
-				print ws + 'ret += $"{ Indentify(%s) }%s\\n";' % (name, ',' if i != len(self.elems) - 1 else '')
-			ws = oldws
-			print ws + '} catch(NullReferenceException) {'
-			print ws + '\tret += "!!NULL!!\\n";'
-			print ws + '}'
-
-		print '\t\t\treturn ret + "}";'
-		print '\t\t}'
-
 		print '\t}'
 
 
@@ -527,9 +349,7 @@ sdefs = {top : (
 allEnums = {enum.name : enum for ns, (structs, bitfields, enums, constants) in sdefs.items() for name, enum in enums.items()}
 
 nsfiles = dict(
-	login='LoginPackets.cs', 
-	world='WorldPackets.cs', 
-	zone='ZonePackets.cs', 
+	EQG='static/generated/eqgstructs.js', 
 )
 
 for ns, (structs, bitfields, enums, constants) in sdefs.items():
@@ -550,23 +370,15 @@ for ns, (structs, bitfields, enums, constants) in sdefs.items():
 * DO NOT EDIT
 *
 */'''
-		print 'using System;'
-		print 'using System.Collections.Generic;'
-		print 'using System.IO;'
-		print 'using static OpenEQ.Network.Utility;'
+		
+		print 'var %s = {};' % ns.title()
 
 		if len(constants):
 			print
-			print 'using static OpenEQ.Network.%sConstants.Constants;' % ns.title()
-			print 'namespace OpenEQ.Network.%sConstants {' % ns.title()
-			print '\tinternal static class Constants {'
-			for name, value in constants.items():
-				print '\t\tpublic static int %s = %i;' % (name, value)
-			print '\t}'
-			print '}'
-
-		print
-		print 'namespace OpenEQ.Network {'
+			print '%s.Constants = {' % ns.title()
+			for i, (name, value) in enumerate(constants.items()):
+				print '\t%s = %i%s' % (name, value, ', ' if len(constants) - 1 > i else '')
+			print '};'
 
 		if len(enums):
 			for i, (name, enum) in enumerate(enums.items()):
@@ -585,7 +397,6 @@ for ns, (structs, bitfields, enums, constants) in sdefs.items():
 			print
 
 		for i, (name, struct) in enumerate(structs.items()):
-			struct.declare()
+			struct.declare(ns.title())
 			if i != len(structs) - 1:
 				print
-		print '}'

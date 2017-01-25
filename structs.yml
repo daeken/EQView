@@ -3,8 +3,7 @@
 EQG:
   structs:
     Mod:
-      - string[4]: Magic # 'EQGM'
-      - assert@if<magic != "EQGM">: magicGuard
+      - string[4]@assert<$ == "EQGM">: Magic # 'EQGM'
       - uint32: Version
       - uint32: strlen, numMat, numVert, numTri, numBones
       - string[strlen]: StringTable
@@ -23,8 +22,7 @@ EQG:
 
     MatProperty:
       - uint32: NameOff # String index
-      - uint32: Type
-      - assert@if<Type == 1 || Type > 3>: typeGuard
+      - uint32@assert<$ != 1 && $ <= 3>: Type
       - float@if<Type == 0>: FloatValue
       - uint32@if<Type == 2>: StringValue # String index
       - uint32@if<Type == 3>: ARGBValue

@@ -21,6 +21,8 @@
 			this.dataView = new DataView(array);
 		} else if ( typeof array === 'number') {
 			this.dataView = new DataView(new ArrayBuffer(array));
+		} else if (array.getUint8 !== undefined) { // already Binary
+			return array;
 		} else {
 			throw new Error('Invalid argument');
 		}
