@@ -3,28 +3,28 @@
 EQG:
   structs:
     Mod:
-      - string[4]@assert<$ == "EQGM">: Magic # 'EQGM'
+      - string[4]@assert<$ == "EQGM">: magic
       - uint32: Version
       - uint32: strlen, numMat, numVert, numTri, numBones
-      - string[strlen]: StringTable
+      - stringtable[strlen]: stringTable
       - Material[numMat]: Materials
       - Vertex[numVert]@if<Version < 3>: Vertices
-      - Vertex3[numVert]@if<Version >= 3>: Vertices3
+      - Vertex3[numVert]@if<Version >= 3>: Vertices
       - Triangle[numTri]: Triangles
       - Bone[numBones]: Bones
       - BoneAssignment[numVert]@if<numBones > 0>: BoneAssignments
 
     Material:
       - uint32: Index
-      - uint32: NameOff, ShaderOff # String indices
+      - stringref<uint32>: Name, Shader
       - uint32: numProp
       - MatProperty[numProp]: Properties
 
     MatProperty:
-      - uint32: NameOff # String index
+      - stringref<uint32>: Name
       - uint32@assert<$ != 1 && $ <= 3>: Type
       - float@if<Type == 0>: FloatValue
-      - uint32@if<Type == 2>: StringValue # String index
+      - stringref<uint32>@if<Type == 2>: StringValue
       - uint32@if<Type == 3>: ARGBValue
 
     Vertex:
@@ -33,16 +33,16 @@ EQG:
 
     Vertex3:
       - float[3]: Position, Normal
-      - uint32: Unk1
+      - uint32: unk1
       - float[2]: TexCoord
-      - float[2]: Unk2
+      - float[2]: unk2
 
     Triangle:
       - uint32[3]: Indices
       - uint32: MatIndex, Flag
 
     Bone:
-      - uint32: NameOff # String index
+      - stringref<uint32>: Name
       - uint32: LinkBoneIndex, Flag, ChildBoneIndex
       - float[3]: Position
       - float[4]: Rotation # Quaternion

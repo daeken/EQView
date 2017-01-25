@@ -28,7 +28,6 @@ class Type(object):
 
 		if '[' in spec:
 			self.rank = spec.split('[', 1)[1].split(']', 1)[0]
-			# XXX: Handle multidimensional arrays
 		else:
 			self.rank = None
 
@@ -38,9 +37,12 @@ class Type(object):
 		if self.base == 'skip':
 			print '%sbr.ReadBytes(%s);' % (ws, self.rank)
 			return
+		elif self.base == 'stringtable':
+			print '%s%s.__stringtable = br.getString(%s);' % (ws, ns, self.rank)
+			return
 
 		if not array and self.base != 'string' and self.rank is not None:
-			print '%svar %s = this.%s = new Array(%s);' % (ws, name, name, self.rank)
+			print '%svar %s = %snew Array(%s);' % (ws, name, 'this.%s = ' % name if name[0].isupper() else '', self.rank)
 			tvar = chr(ord('i') + len(ws) - 2)
 			print '%sfor(var %s = 0; %s < %s; ++%s) {' % (ws, tvar, tvar, self.rank, tvar)
 			self.unpack('%s[%s]' % (name, tvar), ns, ws=ws + '\t', array=self.base)
@@ -55,10 +57,13 @@ class Type(object):
 			val = 'br.getString(%s)' % ('-1' if self.base == 'varstring' else self.rank)
 		elif self.base in allEnums:
 			val = '((%s) 0).Unpack(br)' % self.base
+		elif self.base == 'stringref':
+			self.gen.unpack('_reftemp_' + name, ns, ws, array=array)
+			val = 'readStringFromTable(%s.__stringtable, _reftemp_%s)' % (ns, name)
 		else:
 			val = 'new %s.%s(br)' % (ns, self.base)
 
-		print '%s%s%s = %s;' % (ws, 'var %s = this.' % name if array == False else '', name, val)
+		print '%s%s%s = %s;' % (ws, ('var %s = this.' % name if name[0].isupper() else 'var ') if array == False else '', name, val)
 
 class Struct(object):
 	def __init__(self, name, ydef):

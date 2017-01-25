@@ -53,9 +53,11 @@ Eqg.Material = class {
 	constructor(data) {
 		var br = new Binary(data, true);
 		var Index = this.Index = br.u32();
-		var NameOff = this.NameOff = br.u32();
-		var ShaderOff = this.ShaderOff = br.u32();
-		var numProp = this.numProp = br.u32();
+		var _reftemp_Name = br.u32();
+		var Name = this.Name = readStringFromTable(Eqg.__stringtable, _reftemp_Name);
+		var _reftemp_Shader = br.u32();
+		var Shader = this.Shader = readStringFromTable(Eqg.__stringtable, _reftemp_Shader);
+		var numProp = br.u32();
 		var Properties = this.Properties = new Array(numProp);
 		for(var i = 0; i < numProp; ++i) {
 			Properties[i] = new Eqg.MatProperty(br);
@@ -84,14 +86,16 @@ Eqg.Vertex = class {
 Eqg.MatProperty = class {
 	constructor(data) {
 		var br = new Binary(data, true);
-		var NameOff = this.NameOff = br.u32();
+		var _reftemp_Name = br.u32();
+		var Name = this.Name = readStringFromTable(Eqg.__stringtable, _reftemp_Name);
 		var Type = this.Type = br.u32();
 		if(!(Type != 1 && Type <= 3)) throw new Error('Assertion failed: Type != 1 && Type <= 3');
 		if(Type == 0) {
 			var FloatValue = this.FloatValue = br.f32();
 		}
 		if(Type == 2) {
-			var StringValue = this.StringValue = br.u32();
+			var _reftemp_StringValue = br.u32();
+			var StringValue = this.StringValue = readStringFromTable(Eqg.__stringtable, _reftemp_StringValue);
 		}
 		if(Type == 3) {
 			var ARGBValue = this.ARGBValue = br.u32();
@@ -121,7 +125,8 @@ Eqg.BoneWeight = class {
 Eqg.Bone = class {
 	constructor(data) {
 		var br = new Binary(data, true);
-		var NameOff = this.NameOff = br.u32();
+		var _reftemp_Name = br.u32();
+		var Name = this.Name = readStringFromTable(Eqg.__stringtable, _reftemp_Name);
 		var LinkBoneIndex = this.LinkBoneIndex = br.u32();
 		var Flag = this.Flag = br.u32();
 		var ChildBoneIndex = this.ChildBoneIndex = br.u32();
@@ -143,15 +148,15 @@ Eqg.Bone = class {
 Eqg.Mod = class {
 	constructor(data) {
 		var br = new Binary(data, true);
-		var Magic = this.Magic = br.getString(4);
-		if(!(Magic == "EQGM")) throw new Error('Assertion failed: Magic == "EQGM"');
+		var magic = br.getString(4);
+		if(!(magic == "EQGM")) throw new Error('Assertion failed: magic == "EQGM"');
 		var Version = this.Version = br.u32();
-		var strlen = this.strlen = br.u32();
-		var numMat = this.numMat = br.u32();
-		var numVert = this.numVert = br.u32();
-		var numTri = this.numTri = br.u32();
-		var numBones = this.numBones = br.u32();
-		var StringTable = this.StringTable = br.getString(strlen);
+		var strlen = br.u32();
+		var numMat = br.u32();
+		var numVert = br.u32();
+		var numTri = br.u32();
+		var numBones = br.u32();
+		Eqg.__stringtable = br.getString(strlen);
 		var Materials = this.Materials = new Array(numMat);
 		for(var i = 0; i < numMat; ++i) {
 			Materials[i] = new Eqg.Material(br);
@@ -163,9 +168,9 @@ Eqg.Mod = class {
 			}
 		}
 		if(Version >= 3) {
-			var Vertices3 = this.Vertices3 = new Array(numVert);
+			var Vertices = this.Vertices = new Array(numVert);
 			for(var j = 0; j < numVert; ++j) {
-				Vertices3[j] = new Eqg.Vertex3(br);
+				Vertices[j] = new Eqg.Vertex3(br);
 			}
 		}
 		var Triangles = this.Triangles = new Array(numTri);
