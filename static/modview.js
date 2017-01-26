@@ -2,33 +2,44 @@ function showMod(data) {
 	var mod = new Eqg.Mod(data);
 	console.log(mod);
 
-	var clock = new THREE.Clock();
 	var scene = new THREE.Scene();
-	var camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 1000);
+	var geometry = new THREE.BufferGeometry();
 
-	var renderer = new THREE.WebGLRenderer();
-	renderer.setSize(800, 600);
-	$('#viewer').append(renderer.domElement);
-	var controls = new THREE.FirstPersonControls(camera, renderer.domElement);
-	controls.movementSpeed = 5;
-    controls.lookSpeed = .05;
-    controls.noFly = true;
-    controls.lookVertical = false;
-
-	var geometry = new THREE.BoxGeometry(1, 1, 1);
-	var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-	var cube = new THREE.Mesh(geometry, material);
-	scene.add(cube);
-
-	camera.position.z = 5;
-
-	var first = true;
-	function render() {
-		if(!first && !$('#viewer').is(':visible'))
-			return;
-		requestAnimationFrame(render);
-		controls.update(clock.getDelta());
-		renderer.render(scene, camera);
+	var vertices = new Float32Array(mod.Vertices.length * 3);
+	var normals = new Float32Array(mod.Vertices.length * 3);
+	var texcoords = new Float32Array(mod.Vertices.length * 2);
+	for(var i = 0, j = 0; i < mod.Vertices.length; ++i) {
+		var vert = mod.Vertices[i];
+		vertices [j  ] = vert.Position[0];
+		normals  [j  ] = vert.Normal[0];
+		texcoords[j++] = vert.TexCoord[0];
+		vertices [j  ] = vert.Position[1];
+		normals  [j  ] = vert.Normal[1];
+		texcoords[j++] = vert.TexCoord[1];
+		vertices [j  ] = vert.Position[2];
+		normals  [j++] = vert.Normal[2];
 	}
-	render();
+
+	var indices = new Uint32Array(mod.Triangles.length * 3);
+	for(var i = 0, j = 0; i < mod.Triangles.length; ++i) {
+		var tri = mod.Triangles[i], ind = tri.Indices;
+		indices[j++] = ind[0];
+		indices[j++] = ind[1];
+		indices[j++] = ind[2];
+	}
+
+	geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+	geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
+	geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
+
+	var material = new THREE.MeshNormalMaterial();
+	var obj = new THREE.Mesh(geometry, material);
+	obj.rotateX(-Math.PI / 2);
+	obj.rotateZ(Math.PI);
+	//obj.rotateY(-Math.PI / 2);
+	obj.scale.set(.5, .5, .5);
+	scene.add(obj);
+
+	showScene(scene, function(time, delta) {
+	});
 }
