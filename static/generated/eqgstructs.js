@@ -83,6 +83,36 @@ Eqg.Vertex = class {
 	}
 };
 
+Eqg.Ani = class {
+	constructor(data) {
+		var br = new Binary(data, true);
+		var magic = br.getString(4);
+		if(!(magic == "EQGA")) throw new Error('Assertion failed: magic == "EQGA"');
+		var Version = this.Version = br.u32();
+		var strlen = br.u32();
+		var NumBones = this.NumBones = br.u32();
+		var NumUnk2 = this.NumUnk2 = br.u32();
+		Eqg.__stringtable = br.getString(strlen);
+		var FrameBones = this.FrameBones = new Array(NumBones);
+		for(var i = 0; i < NumBones; ++i) {
+			FrameBones[i] = new Eqg.FrameBone(br);
+		}
+	}
+};
+
+Eqg.FrameBone = class {
+	constructor(data) {
+		var br = new Binary(data, true);
+		var numFrames = br.u32();
+		var _reftemp_Bone = br.u32();
+		var Bone = this.Bone = readStringFromTable(Eqg.__stringtable, _reftemp_Bone);
+		var Frames = this.Frames = new Array(numFrames);
+		for(var i = 0; i < numFrames; ++i) {
+			Frames[i] = new Eqg.Frame(br);
+		}
+	}
+};
+
 Eqg.MatProperty = class {
 	constructor(data) {
 		var br = new Binary(data, true);
@@ -152,6 +182,25 @@ Eqg.Ter = class {
 		var Triangles = this.Triangles = new Array(numTri);
 		for(var i = 0; i < numTri; ++i) {
 			Triangles[i] = new Eqg.Triangle(br);
+		}
+	}
+};
+
+Eqg.Frame = class {
+	constructor(data) {
+		var br = new Binary(data, true);
+		var Time = this.Time = br.u32();
+		var Translation = this.Translation = new Array(3);
+		for(var i = 0; i < 3; ++i) {
+			Translation[i] = br.f32();
+		}
+		var Rotation = this.Rotation = new Array(4);
+		for(var i = 0; i < 4; ++i) {
+			Rotation[i] = br.f32();
+		}
+		var Scaling = this.Scaling = new Array(3);
+		for(var i = 0; i < 3; ++i) {
+			Scaling[i] = br.f32();
 		}
 	}
 };

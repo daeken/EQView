@@ -65,3 +65,21 @@ EQG:
     BoneWeight:
       - int32: BoneIndex
       - float: Value
+
+    Ani:
+      - string[4]@assert<$ == "EQGA">: magic
+      - uint32: Version
+      - uint32: strlen, NumBones, NumUnk2
+      - stringtable[strlen]: stringTable
+      - FrameBone[NumBones]: FrameBones
+
+    FrameBone:
+      - uint32: numFrames
+      - stringref<uint32>: Bone
+      - Frame[numFrames]: Frames
+
+    Frame:
+      - uint32: Time
+      - float[3]: Translation
+      - float[4]: Rotation
+      - float[3]: Scaling

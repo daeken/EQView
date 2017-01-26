@@ -35,7 +35,7 @@ class Type(object):
 
 	def unpack(self, name, ns, ws='', array=False):
 		if self.base == 'skip':
-			print '%sbr.ReadBytes(%s);' % (ws, self.rank)
+			print '%sbr.getBytes(%s);' % (ws, self.rank)
 			return
 		elif self.base == 'stringtable':
 			print '%s%s.__stringtable = br.getString(%s);' % (ws, ns, self.rank)

@@ -26,6 +26,9 @@ function viewFile(s3d, fn) {
 	$('#viewer').empty();
 
 	switch(ext) {
+		case 'ani':
+			showAni(s3d.files[fn]);
+			break;
 		case 'mod':
 			showMod(s3d.files[fn]);
 			break;
