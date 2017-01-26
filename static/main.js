@@ -27,13 +27,13 @@ function viewFile(s3d, fn) {
 
 	switch(ext) {
 		case 'ani':
-			showAni(s3d.files[fn]);
+			showAni(s3d.files[fn], s3d.files);
 			break;
 		case 'mod':
-			showMod(s3d.files[fn]);
+			showMod(s3d.files[fn], s3d.files);
 			break;
 		case 'ter':
-			showTer(s3d.files[fn]);
+			showTer(s3d.files[fn], s3d.files);
 			break;
 		default:
 			showHex(s3d.files[fn]);
@@ -67,7 +67,7 @@ function selectRootFile(fn, pushed, sub) {
 	});
 }
 
-var specialExt = ['s3d', 'eqg', 'wld', 'ani', 'lit', 'mod', 'zon', 'ter'];
+var specialExt = ['s3d', 'eqg', 'wld', 'ani', 'mod', 'zon', 'ter'];
 function cmp(a, b) {
 	if(a == b)
 		return 0;
