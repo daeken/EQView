@@ -31,7 +31,8 @@ function showMod(data, files) {
 						break;
 				}
 			}
-			matarr[mat.Index] = new THREE.MeshPhongMaterial(props);
+			var jmat = matarr[mat.Index] = new THREE.MeshPhongMaterial(props);
+			jmat.skinning = true;
 		}
 		return matarr;
 	}
@@ -82,8 +83,9 @@ function showMod(data, files) {
 	geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
 	geometry.addAttribute('uv', new THREE.BufferAttribute(texcoords, 2));
 	var material = new THREE.MultiMaterial(createMaterials());
+	material.skinning = true;
 
-	var obj;
+	var obj, boneNames;
 	if(mod.Bones.length != 0) {
 		var bones = mod.Bones.map(function(bone) {
 			var jbone = new THREE.Bone();
@@ -92,6 +94,7 @@ function showMod(data, files) {
 			jbone.scale.set(bone.Scale[0], bone.Scale[1], bone.Scale[2]);
 			return jbone;
 		});
+		boneNames = mod.Bones.map(bone => bone.Name);
 		function joinBones(i) {
 			var mbone = mod.Bones[i], jbone = bones[i];
 
@@ -104,11 +107,11 @@ function showMod(data, files) {
 		}
 		joinBones(0);
 
-		var skinIndices = new Uint32Array(mod.BoneAssignments.length * 4);
+		var skinIndices = new Uint16Array(mod.BoneAssignments.length * 4);
 		var skinWeights = new Float32Array(mod.BoneAssignments.length * 4);
 		for(var i = 0; i < mod.BoneAssignments.length; ++i) {
 			var w = mod.BoneAssignments[i].Weights;
-			for(var j = 0; j < 4; ++j) {
+			for(var j = 0; j < mod.BoneAssignments[i].Count; ++j) {
 				skinIndices[i * 4 + j] = w[j].BoneIndex;
 				skinWeights[i * 4 + j] = w[j].Value;
 			}
@@ -119,17 +122,12 @@ function showMod(data, files) {
 		obj = new THREE.SkinnedMesh(geometry, material);
 		obj.add(bones[0]);
 		obj.bind(new THREE.Skeleton(bones));
-
-		/*var helper = new THREE.SkeletonHelper(obj);
-		helper.material.linewidth = 3;
-		obj.add(helper);*/
 	} else {
 		obj = new THREE.Mesh(geometry, material);
 	}
 
 	obj.rotateX(-Math.PI / 2);
 	obj.rotateZ(Math.PI);
-	//obj.rotateY(-Math.PI / 2);
 	obj.scale.set(.5, .5, .5);
 	scene.add(obj);
 
@@ -143,7 +141,52 @@ function showMod(data, files) {
 	light.position.set(0, 10, -10);
 	scene.add(light);
 
+	var ani, aniTime, aniMax;
 	showScene(scene, function(time, delta) {
-		bones[0].position.set(Math.sin(time) * 2, bones[0].position.y, bones[0].position.z);
+		if(ani !== undefined) {
+			if(aniTime === undefined)
+				aniTime = time;
+			var adelta = ~~((time - aniTime) * 1000) % aniMax;
+			for(var abone of ani.FrameBones) {
+				var f = abone.Frames;
+				for(var i = 0; i < f.length - 1; ++i) {
+					if(f[i].Time <= adelta && f[i + 1].Time >= adelta) {
+						var a = (adelta - f[i].Time) / (f[i + 1].Time - f[i].Time);
+						abone.Bone.position.lerpVectors(f[i].Translation, f[i + 1].Translation, a);
+						THREE.Quaternion.slerp(f[i].Rotation, f[i + 1].Rotation, abone.Bone.quaternion, a);
+						abone.Bone.scale.lerpVectors(f[i].Scaling, f[i + 1].Scaling, a);
+						break;
+					}
+				}
+			}
+		}
 	});
+
+	if(mod.Bones.length > 0) {
+		var select = $('<select>');
+		select.append('<option value="">-----------</option>');
+		for(var name in files) {
+			if(name.match(/\.ani$/i))
+				select.append($('<option>').text(name));
+		}
+		select.change(function() {
+			var fn = select.val();
+			if(fn == '') {
+				ani = undefined;
+				return;
+			}
+			ani = new Eqg.Ani(files[fn]);
+			for(var abone of ani.FrameBones) {
+				abone.Bone = bones[boneNames.indexOf(abone.Bone)];
+				for(var f of abone.Frames) {
+					f.Translation = new THREE.Vector3(f.Translation[0], f.Translation[1], f.Translation[2]);
+					f.Rotation = new THREE.Quaternion(f.Rotation[0], f.Rotation[1], f.Rotation[2], f.Rotation[3]);
+					f.Scaling = new THREE.Vector3(f.Scaling[0], f.Scaling[1], f.Scaling[2]);
+				}
+			}
+			aniTime = undefined;
+			aniMax = Math.max.apply(null, ani.FrameBones.map(bone => bone.Frames[bone.Frames.length - 1].Time));
+		});
+		$('#viewer').append(select);
+	}
 }
