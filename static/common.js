@@ -10,6 +10,7 @@ function showScene(scene, cb) {
 	var camera = new THREE.PerspectiveCamera(60, 800 / 600, 0.1, 1000);
 
 	var renderer = new THREE.WebGLRenderer();
+	renderer.setClearColor(0x002864, 1);
 	renderer.setSize(800, 600);
 	$('#viewer').append(renderer.domElement);
 	var controls = new THREE.FirstPersonControls(camera, renderer.domElement);

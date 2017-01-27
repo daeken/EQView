@@ -210,9 +210,9 @@ Eqg.Bone = class {
 		var br = new Binary(data, true);
 		var _reftemp_Name = br.u32();
 		var Name = this.Name = readStringFromTable(Eqg.__stringtable, _reftemp_Name);
-		var LinkBoneIndex = this.LinkBoneIndex = br.u32();
+		var LinkBoneIndex = this.LinkBoneIndex = br.i32();
 		var Flag = this.Flag = br.u32();
-		var ChildBoneIndex = this.ChildBoneIndex = br.u32();
+		var ChildBoneIndex = this.ChildBoneIndex = br.i32();
 		var Position = this.Position = new Array(3);
 		for(var i = 0; i < 3; ++i) {
 			Position[i] = br.f32();

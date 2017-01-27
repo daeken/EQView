@@ -53,7 +53,9 @@ EQG:
 
     Bone:
       - stringref<uint32>: Name
-      - uint32: LinkBoneIndex, Flag, ChildBoneIndex
+      - int32: LinkBoneIndex
+      - uint32: Flag
+      - int32: ChildBoneIndex
       - float[3]: Position
       - float[4]: Rotation # Quaternion
       - float[3]: Scale
@@ -81,5 +83,5 @@ EQG:
     Frame:
       - uint32: Time
       - float[3]: Translation
-      - float[4]: Rotation
+      - float[4]: Rotation # Quaternion
       - float[3]: Scaling
