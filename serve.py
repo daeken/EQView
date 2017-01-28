@@ -36,7 +36,7 @@ if __name__ == '__main__':
 	import sys
 	if len(sys.argv) > 1:
 		eqpath = sys.argv[1]
-		app.run()
+		app.run(host='0.0.0.0')
 	else:
 		print >>sys.stderr, 'ERROR: EQ path not provided'
 		print >>sys.stderr, 'Usage: python serve.py <path-to-everquest-install>'
