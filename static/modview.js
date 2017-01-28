@@ -56,7 +56,7 @@ function showMod(data, files) {
 		normals  [j++] = vert.Normal[2];
 
 		texcoords[k++] = vert.TexCoord[0];
-		texcoords[k++] = vert.TexCoord[1];
+		texcoords[k++] = -vert.TexCoord[1];
 	}
 
 	mod.Triangles.sort(function(a, b) {
