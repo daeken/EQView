@@ -1,4 +1,6 @@
-function showModTer(mod, files) {
+function mod2three(mod, files, loadSkeleton) {
+	loadSkeleton = loadSkeleton !== undefined ? loadSkeleton : true;
+
 	function makeTex(name) {
 		var data = files[name.toLowerCase()];
 		var asstr = '';
@@ -37,7 +39,6 @@ function showModTer(mod, files) {
 		return matarr;
 	}
 
-	var scene = new THREE.Scene();
 	var geometry = new THREE.BufferGeometry();
 
 	var vertices = new Float32Array(mod.Vertices.length * 3);
@@ -79,11 +80,12 @@ function showModTer(mod, files) {
 	geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
 	geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
 	geometry.addAttribute('uv', new THREE.BufferAttribute(texcoords, 2));
-	var hasSkeleton = mod.Bones !== undefined && mod.Bones.length != 0;
-	var material = new THREE.MultiMaterial(createMaterials());
+	var hasSkeleton = loadSkeleton && mod.Bones !== undefined && mod.Bones.length != 0;
+	var mats = createMaterials();
+	var material = mats.length == 1 ? mats[0] : new THREE.MultiMaterial(mats);
 	material.skinning = hasSkeleton;
 
-	var obj, boneNames, helper;
+	var obj;
 	if(hasSkeleton) {
 		var bones = mod.Bones.map(function(bone) {
 			var jbone = new THREE.Bone();
@@ -93,7 +95,6 @@ function showModTer(mod, files) {
 			jbone.scale.set(bone.Scale[0], bone.Scale[1], bone.Scale[2]);
 			return jbone;
 		});
-		boneNames = mod.Bones.map(bone => bone.Name);
 		function joinBones(i) {
 			var mbone = mod.Bones[i], jbone = bones[i];
 
@@ -121,16 +122,25 @@ function showModTer(mod, files) {
 		obj = new THREE.SkinnedMesh(geometry, material);
 		obj.add(bones[0]);
 		obj.bind(new THREE.Skeleton(bones));
-		helper = new THREE.SkeletonHelper(obj);
-		console.log(helper.useQuaternion);
-		helper.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
-		scene.add(helper);
+		obj.bones = bones;
+		obj.boneNames = mod.Bones.map(bone => bone.Name);
+		obj.helper = new THREE.SkeletonHelper(obj);
+		obj.helper.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
 	} else {
 		obj = new THREE.Mesh(geometry, material);
 	}
 
+	obj.hasSkeleton = hasSkeleton;
+
 	obj.rotateX(-Math.PI / 2);
 	obj.rotateZ(Math.PI);
+
+	return obj;
+}
+
+function showModTer(mod, files) {
+	var scene = new THREE.Scene();
+	var obj = mod2three(mod, files);
 	scene.add(obj);
 
 	scene.add(new THREE.AmbientLight(0x404040, 2));
@@ -164,11 +174,13 @@ function showModTer(mod, files) {
 				}
 			}
 		}
-		if(helper !== undefined)
-			helper.update();
+		if(obj.hasSkeleton)
+			obj.helper.update();
 	});
 
-	if(hasSkeleton) {
+	if(obj.hasSkeleton) {
+		scene.add(obj.helper);
+
 		var select = $('<select>');
 		select.append('<option value="">-----------</option>');
 		for(var name in files) {
@@ -183,7 +195,7 @@ function showModTer(mod, files) {
 			}
 			ani = new Eqg.Ani(files[fn]);
 			for(var abone of ani.FrameBones) {
-				abone.Bone = bones[boneNames.indexOf(abone.Bone)];
+				abone.Bone = obj.bones[obj.boneNames.indexOf(abone.Bone)];
 				for(var f of abone.Frames) {
 					f.Translation = new THREE.Vector3(f.Translation[0], f.Translation[1], f.Translation[2]);
 					f.Rotation = new THREE.Quaternion(f.Rotation[0], f.Rotation[1], f.Rotation[2], f.Rotation[3]).inverse();
@@ -196,7 +208,7 @@ function showModTer(mod, files) {
 		$('#viewer').append(select);
 		var skelviz = $('<input type="checkbox" checked>');
 		skelviz.change(function() {
-			helper.visible = skelviz.is(':checked');
+			obj.helper.visible = skelviz.is(':checked');
 		});
 		$('#viewer').append(skelviz);
 		$('#viewer').append('Show skeleton');

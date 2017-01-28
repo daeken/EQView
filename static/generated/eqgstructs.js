@@ -100,6 +100,30 @@ Eqg.Ani = class {
 	}
 };
 
+Eqg.Zon = class {
+	constructor(data) {
+		var br = new Binary(data, true);
+		var magic = br.getString(4);
+		if(!(magic == "EQGZ")) throw new Error('Assertion failed: magic == "EQGZ"');
+		var Version = this.Version = br.u32();
+		var strlen = br.u32();
+		var numFiles = br.u32();
+		var numPlaceables = br.u32();
+		var NumUnk3 = this.NumUnk3 = br.u32();
+		var numLights = br.u32();
+		Eqg.__stringtable = br.getString(strlen);
+		var Files = this.Files = new Array(numFiles);
+		for(var i = 0; i < numFiles; ++i) {
+			Files[i] = br.u32();
+			Files[i] = readStringFromTable(Eqg.__stringtable, Files[i]);
+		}
+		var Placeables = this.Placeables = new Array(numPlaceables);
+		for(var i = 0; i < numPlaceables; ++i) {
+			Placeables[i] = new Eqg.Placeable(br);
+		}
+	}
+};
+
 Eqg.FrameBone = class {
 	constructor(data) {
 		var br = new Binary(data, true);
@@ -183,6 +207,24 @@ Eqg.Ter = class {
 		for(var i = 0; i < numTri; ++i) {
 			Triangles[i] = new Eqg.Triangle(br);
 		}
+	}
+};
+
+Eqg.Placeable = class {
+	constructor(data) {
+		var br = new Binary(data, true);
+		var Index = this.Index = br.u32();
+		var _reftemp_Name = br.u32();
+		var Name = this.Name = readStringFromTable(Eqg.__stringtable, _reftemp_Name);
+		var Position = this.Position = new Array(3);
+		for(var i = 0; i < 3; ++i) {
+			Position[i] = br.f32();
+		}
+		var Rotation = this.Rotation = new Array(3);
+		for(var i = 0; i < 3; ++i) {
+			Rotation[i] = br.f32();
+		}
+		var Scale = this.Scale = br.f32();
 	}
 };
 

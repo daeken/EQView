@@ -58,8 +58,12 @@ class Type(object):
 		elif self.base in allEnums:
 			val = '((%s) 0).Unpack(br)' % self.base
 		elif self.base == 'stringref':
-			self.gen.unpack('_reftemp_' + name, ns, ws, array=array)
-			val = 'readStringFromTable(%s.__stringtable, _reftemp_%s)' % (ns, name)
+			if array == False:
+				self.gen.unpack('_reftemp_' + name, ns, ws, array=array)
+				val = 'readStringFromTable(%s.__stringtable, _reftemp_%s)' % (ns, name)
+			else:
+				self.gen.unpack(name, ns, ws, array=array)
+				val = 'readStringFromTable(%s.__stringtable, %s)' % (ns, name)
 		else:
 			val = 'new %s.%s(br)' % (ns, self.base)
 

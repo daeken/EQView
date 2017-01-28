@@ -70,8 +70,7 @@ EQG:
 
     Ani:
       - string[4]@assert<$ == "EQGA">: magic
-      - uint32: Version
-      - uint32: strlen, NumBones, NumUnk2
+      - uint32: Version, strlen, NumBones, NumUnk2
       - stringtable[strlen]: stringTable
       - FrameBone[NumBones]: FrameBones
 
@@ -85,3 +84,18 @@ EQG:
       - float[3]: Translation
       - float[4]: Rotation # Quaternion
       - float[3]: Scaling
+
+    Zon:
+      - string[4]@assert<$ == "EQGZ">: magic
+      - uint32: Version, strlen, numFiles, numPlaceables, NumUnk3, numLights
+      - stringtable[strlen]: stringTable
+      - stringref<uint32>[numFiles]: Files
+      - Placeable[numPlaceables]: Placeables
+      # XXX: Incomplete!
+
+    Placeable:
+      - uint32: Index
+      - stringref<uint32>: Name
+      - float[3]: Position
+      - float[3]: Rotation
+      - float: Scale
