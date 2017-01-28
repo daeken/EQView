@@ -1,4 +1,4 @@
-function showMod(data, files) {
+function showModTer(mod, files) {
 	function makeTex(name) {
 		var data = files[name.toLowerCase()];
 		var asstr = '';
@@ -32,14 +32,11 @@ function showMod(data, files) {
 				}
 			}
 			var jmat = matarr[mat.Index] = new THREE.MeshPhongMaterial(props);
-			jmat.skinning = true;
+			jmat.skinning = hasSkeleton;
 		}
 		return matarr;
 	}
 
-	var mod = new Eqg.Mod(data);
-	console.log(mod);
-	
 	var scene = new THREE.Scene();
 	var geometry = new THREE.BufferGeometry();
 
@@ -82,11 +79,12 @@ function showMod(data, files) {
 	geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
 	geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
 	geometry.addAttribute('uv', new THREE.BufferAttribute(texcoords, 2));
+	var hasSkeleton = mod.Bones !== undefined && mod.bones.Length != 0;
 	var material = new THREE.MultiMaterial(createMaterials());
-	material.skinning = true;
+	material.skinning = hasSkeleton;
 
 	var obj, boneNames, helper;
-	if(mod.Bones.length != 0) {
+	if(hasSkeleton) {
 		var bones = mod.Bones.map(function(bone) {
 			var jbone = new THREE.Bone();
 			jbone.position.set(bone.Position[0], bone.Position[1], bone.Position[2]);
@@ -170,7 +168,7 @@ function showMod(data, files) {
 			helper.update();
 	});
 
-	if(mod.Bones.length > 0) {
+	if(hasSkeleton) {
 		var select = $('<select>');
 		select.append('<option value="">-----------</option>');
 		for(var name in files) {
@@ -204,3 +202,15 @@ function showMod(data, files) {
 		$('#viewer').append('Show skeleton');
 	}
 }
+
+fileHandler('mod', function(data, files) {
+	var mod = new Eqg.Mod(data);
+	//console.log(mod);
+	showModTer(mod, files);
+});
+
+fileHandler('ter', function(data, files) {
+	var ter = new Eqg.Ter(data);
+	//console.log(ter);
+	showModTer(ter, files);
+});

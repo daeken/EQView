@@ -25,20 +25,10 @@ function viewFile(s3d, fn) {
 
 	$('#viewer').empty();
 
-	switch(ext) {
-		case 'ani':
-			showAni(s3d.files[fn], s3d.files);
-			break;
-		case 'mod':
-			showMod(s3d.files[fn], s3d.files);
-			break;
-		case 'ter':
-			showTer(s3d.files[fn], s3d.files);
-			break;
-		default:
-			showHex(s3d.files[fn]);
-			break;
-	}
+	if(fileHandlers[ext] !== undefined)
+		fileHandlers[ext](s3d.files[fn], s3d.files);
+	else
+		showHex(s3d.files[fn]);
 
 	$('#subfileselector,#tlfileselector').hide();
 	$('#viewer').show();

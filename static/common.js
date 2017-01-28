@@ -34,3 +34,9 @@ function showScene(scene, cb) {
 	}
 	render();
 }
+
+var fileHandlers = {};
+function fileHandler(ext, func) {
+	fileHandlers[ext] = func;
+	return func;
+}
