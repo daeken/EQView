@@ -79,7 +79,7 @@ function showModTer(mod, files) {
 	geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
 	geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
 	geometry.addAttribute('uv', new THREE.BufferAttribute(texcoords, 2));
-	var hasSkeleton = mod.Bones !== undefined && mod.bones.Length != 0;
+	var hasSkeleton = mod.Bones !== undefined && mod.Bones.length != 0;
 	var material = new THREE.MultiMaterial(createMaterials());
 	material.skinning = hasSkeleton;
 
