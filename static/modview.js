@@ -85,12 +85,13 @@ function showMod(data, files) {
 	var material = new THREE.MultiMaterial(createMaterials());
 	material.skinning = true;
 
-	var obj, boneNames;
+	var obj, boneNames, helper;
 	if(mod.Bones.length != 0) {
 		var bones = mod.Bones.map(function(bone) {
 			var jbone = new THREE.Bone();
 			jbone.position.set(bone.Position[0], bone.Position[1], bone.Position[2]);
 			jbone.quaternion.set(bone.Rotation[0], bone.Rotation[1], bone.Rotation[2], bone.Rotation[3])
+			jbone.quaternion.copy(jbone.quaternion.inverse());
 			jbone.scale.set(bone.Scale[0], bone.Scale[1], bone.Scale[2]);
 			return jbone;
 		});
@@ -122,13 +123,16 @@ function showMod(data, files) {
 		obj = new THREE.SkinnedMesh(geometry, material);
 		obj.add(bones[0]);
 		obj.bind(new THREE.Skeleton(bones));
+		helper = new THREE.SkeletonHelper(obj);
+		console.log(helper.useQuaternion);
+		helper.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
+		scene.add(helper);
 	} else {
 		obj = new THREE.Mesh(geometry, material);
 	}
 
 	obj.rotateX(-Math.PI / 2);
 	obj.rotateZ(Math.PI);
-	obj.scale.set(.5, .5, .5);
 	scene.add(obj);
 
 	scene.add(new THREE.AmbientLight(0x404040, 2));
@@ -149,6 +153,8 @@ function showMod(data, files) {
 			var adelta = ~~((time - aniTime) * 1000) % aniMax;
 			for(var abone of ani.FrameBones) {
 				var f = abone.Frames;
+				if(abone.Bone === undefined) // This animation bone doesn't exist in the model
+					continue;
 				for(var i = 0; i < f.length - 1; ++i) {
 					if(f[i].Time <= adelta && f[i + 1].Time >= adelta) {
 						var a = (adelta - f[i].Time) / (f[i + 1].Time - f[i].Time);
@@ -160,6 +166,8 @@ function showMod(data, files) {
 				}
 			}
 		}
+		if(helper !== undefined)
+			helper.update();
 	});
 
 	if(mod.Bones.length > 0) {
@@ -180,7 +188,7 @@ function showMod(data, files) {
 				abone.Bone = bones[boneNames.indexOf(abone.Bone)];
 				for(var f of abone.Frames) {
 					f.Translation = new THREE.Vector3(f.Translation[0], f.Translation[1], f.Translation[2]);
-					f.Rotation = new THREE.Quaternion(f.Rotation[0], f.Rotation[1], f.Rotation[2], f.Rotation[3]);
+					f.Rotation = new THREE.Quaternion(f.Rotation[0], f.Rotation[1], f.Rotation[2], f.Rotation[3]).inverse();
 					f.Scaling = new THREE.Vector3(f.Scaling[0], f.Scaling[1], f.Scaling[2]);
 				}
 			}
@@ -188,5 +196,11 @@ function showMod(data, files) {
 			aniMax = Math.max.apply(null, ani.FrameBones.map(bone => bone.Frames[bone.Frames.length - 1].Time));
 		});
 		$('#viewer').append(select);
+		var skelviz = $('<input type="checkbox" checked>');
+		skelviz.change(function() {
+			helper.visible = skelviz.is(':checked');
+		});
+		$('#viewer').append(skelviz);
+		$('#viewer').append('Show skeleton');
 	}
 }

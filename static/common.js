@@ -6,12 +6,13 @@ function readStringFromTable(table, pos) {
 }
 
 function showScene(scene, cb) {
+	var vpsize = [1000, 1000];
 	var clock = new THREE.Clock();
-	var camera = new THREE.PerspectiveCamera(60, 800 / 600, 0.1, 1000);
+	var camera = new THREE.PerspectiveCamera(60, vpsize[0] / vpsize[1], 0.1, 1000);
 
 	var renderer = new THREE.WebGLRenderer();
 	renderer.setClearColor(0x002864, 1);
-	renderer.setSize(800, 600);
+	renderer.setSize(vpsize[0], vpsize[1]);
 	$('#viewer').append(renderer.domElement);
 	var controls = new THREE.FirstPersonControls(camera, renderer.domElement);
 	controls.movementSpeed = 5;
