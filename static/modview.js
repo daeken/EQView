@@ -2,13 +2,9 @@ function mod2three(mod, files, loadSkeleton) {
 	loadSkeleton = loadSkeleton !== undefined ? loadSkeleton : true;
 
 	function makeTex(name) {
-		var data = files[name.toLowerCase()];
-		var b64;
-		if(data._b64 === undefined) {
-			b64 = data._b64 = btoa([].reduce.call(data, (p, c) => p+String.fromCharCode(c), ''));
-		} else
-			b64 = data._b64;
-		var texture = new THREE.DDSLoader().load('data:image/png;base64,' + b64);
+		var data = new Uint8Array(files[name.toLowerCase()]).buffer;
+		data._bufferDirect = true;
+		var texture = new THREE.DDSLoader().load(data);
 		texture.wrapS = THREE.RepeatWrapping;
 		texture.wrapT = THREE.RepeatWrapping;
 		return texture;
