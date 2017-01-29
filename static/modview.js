@@ -3,10 +3,11 @@ function mod2three(mod, files, loadSkeleton) {
 
 	function makeTex(name) {
 		var data = files[name.toLowerCase()];
-		var asstr = '';
-		for(var b of data)
-			asstr += String.fromCharCode(b);
-		var b64 = btoa(asstr);
+		var b64;
+		if(data._b64 === undefined) {
+			b64 = data._b64 = btoa([].reduce.call(data, (p, c) => p+String.fromCharCode(c), ''));
+		} else
+			b64 = data._b64;
 		var texture = new THREE.DDSLoader().load('data:image/png;base64,' + b64);
 		texture.wrapS = THREE.RepeatWrapping;
 		texture.wrapT = THREE.RepeatWrapping;
